@@ -296,7 +296,7 @@
     </div>
     <div class="right">
       <div class="toolbar">
-        <button id="editModeBtn">Done</button>
+        <button id="editModeBtn">Edit</button>
         <button id="previewBtn">Preview</button>
         <button id="addBtn">Add</button>
         <button id="shareBtn">Share</button>
@@ -591,7 +591,11 @@
     }); // [web:88][web:92][web:98]
 
     // Edit 模式切換（可編輯 / 只讀）
-    editor.readOnly = false;
+    // 初始：只讀模式，按「Edit」才進入可編輯
+    let isEditMode = false;
+    editor.readOnly = true;
+    editModeBtn.textContent = 'Edit';
+    
     editModeBtn.addEventListener('click', () => {
       isEditMode = !isEditMode;
       editor.readOnly = !isEditMode;
