@@ -1,11 +1,118 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>MD Viewer Test</title>
+  <title>Markdown Viewer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- PWA manifest -->
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#20232a" />
+
+  <style>
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+      background: #20232a;
+      color: #fff;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    header {
+      padding: 8px 12px;
+      background: #20232a;
+      border-bottom: 1px solid #333;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 14px;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 16px;
+    }
+    header button {
+      background: #61dafb;
+      border: none;
+      color: #000;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 13px;
+    }
+    .container {
+      flex: 1;
+      display: flex;
+      min-height: 0;
+    }
+    textarea {
+      width: 50%;
+      padding: 8px;
+      border: none;
+      border-right: 1px solid #333;
+      outline: none;
+      font-family: Menlo, SFMono-Regular, monospace;
+      font-size: 13px;
+      background: #1b1f23;
+      color: #e5e5e5;
+      resize: none;
+    }
+    #preview {
+      width: 50%;
+      padding: 8px 12px;
+      overflow-y: auto;
+      background: #181a1f;
+    }
+    @media (max-width: 768px) {
+      .container {
+        flex-direction: column;
+      }
+      textarea, #preview {
+        width: 100%;
+        height: 50%;
+      }
+      textarea {
+        border-right: none;
+        border-bottom: 1px solid #333;
+      }
+    }
+    #preview h1, #preview h2, #preview h3 {
+      border-bottom: 1px solid #333;
+      padding-bottom: 4px;
+    }
+    #preview code {
+      background: #2d333b;
+      padding: 2px 4px;
+      border-radius: 3px;
+      font-size: 13px;
+    }
+    #preview pre code {
+      display: block;
+      padding: 8px;
+      overflow-x: auto;
+    }
+    #status {
+      font-size: 11px;
+      opacity: 0.7;
+    }
+  </style>
+  <!-- marked.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 <body>
-  <h1>Hello Markdown Viewer</h1>
-  <p>If you see this on GitHub Pages, it works.</p>
-</body>
-</html>
+  <header>
+    <h1>Markdown Viewer</h1>
+    <div id="status">Saved</div>
+  </header>
+  <div class="container">
+    <textarea id="editor" placeholder="# Type your markdown here..."></textarea>
+    <div id="preview"></div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'md-viewer-doc';
+    const editor = document.getElementById('editor');
+    const preview = document.getElementById('preview');
+    const statusEl = document.getElementById('status');
+
+    // Load saved content
+    const saved = l
