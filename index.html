@@ -52,7 +52,7 @@
       flex-wrap: wrap;
       justify-content: flex-end;
       gap: 6px;
-      max-width: 280px;
+      max-width: 320px;
     }
     header button {
       border: none;
@@ -212,9 +212,80 @@
         height: calc(100% - 0px);
       }
     }
+
+    /* 預覽 overlay */
+    .preview-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.55);
+      backdrop-filter: blur(14px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+    }
+    .preview-panel {
+      width: 94%;
+      max-width: 720px;
+      max-height: 85vh;
+      background: rgba(15, 15, 22, 0.96);
+      border-radius: 18px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.7);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .preview-header {
+      padding: 10px 14px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 14px;
+    }
+    .preview-header span {
+      font-weight: 600;
+    }
+    .preview-header button {
+      border: none;
+      border-radius: 9px;
+      padding: 4px 10px;
+      font-size: 13px;
+      font-weight: 500;
+      color: #0b0c10;
+      background: linear-gradient(135deg, #ffb347, #ff7e5f);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+    }
+    .preview-content {
+      padding: 10px 14px;
+      overflow-y: auto;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .preview-content h1,
+    .preview-content h2,
+    .preview-content h3 {
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding-bottom: 4px;
+      margin-top: 12px;
+    }
+    .preview-content h1 { font-size: 20px; }
+    .preview-content h2 { font-size: 18px; }
+    .preview-content h3 { font-size: 16px; }
+    .preview-content code {
+      background: rgba(255, 255, 255, 0.08);
+      padding: 2px 4px;
+      border-radius: 4px;
+      font-size: 13px;
+    }
+    .preview-content pre code {
+      display: block;
+      padding: 8px;
+      overflow-x: auto;
+    }
   </style>
 
-  <!-- marked 不再需要可刪，如果將來不做 HTML 預覽可以拿掉 -->
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 <body>
@@ -226,6 +297,7 @@
     <div class="right">
       <div class="toolbar">
         <button id="editModeBtn">Done</button>
+        <button id="previewBtn">Preview</button>
         <button id="addBtn">Add</button>
         <button id="shareBtn">Share</button>
         <button id="loadBtn">Load</button>
@@ -250,6 +322,17 @@
     </div>
   </div>
 
+  <!-- 預覽彈出視窗 -->
+  <div id="previewOverlay" class="preview-overlay">
+    <div class="preview-panel">
+      <div class="preview-header">
+        <span>Preview</span>
+        <button id="closePreviewBtn">Close</button>
+      </div>
+      <div id="previewContent" class="preview-content"></div>
+    </div>
+  </div>
+
   <!-- 隱藏的檔案選擇器，用來 Load markdown -->
   <input
     type="file"
@@ -269,10 +352,14 @@
     const shareBtn = document.getElementById('shareBtn');
     const loadBtn = document.getElementById('loadBtn');
     const editModeBtn = document.getElementById('editModeBtn');
+    const previewBtn = document.getElementById('previewBtn');
     const fileInput = document.getElementById('fileInput');
     const notesListEl = document.getElementById('notesList');
     const toggleSidebarBtn = document.getElementById('toggleSidebarBtn');
     const sidebarEl = document.querySelector('.sidebar');
+    const previewOverlay = document.getElementById('previewOverlay');
+    const previewContent = document.getElementById('previewContent');
+    const closePreviewBtn = document.getElementById('closePreviewBtn');
 
     let notes = [];
     let activeId = null;
@@ -513,6 +600,23 @@
         editor.focus();
         const len = editor.value.length;
         editor.setSelectionRange(len, len);
+      }
+    });
+
+    // Preview 彈出視窗
+    previewBtn.addEventListener('click', () => {
+      const md = editor.value || '';
+      previewContent.innerHTML = marked.parse(md);
+      previewOverlay.style.display = 'flex';
+    });
+
+    closePreviewBtn.addEventListener('click', () => {
+      previewOverlay.style.display = 'none';
+    });
+
+    previewOverlay.addEventListener('click', (e) => {
+      if (e.target === previewOverlay) {
+        previewOverlay.style.display = 'none';
       }
     });
 
