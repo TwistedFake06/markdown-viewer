@@ -31,6 +31,11 @@
       margin: 0;
       font-size: 16px;
     }
+    header .left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
     header .right {
       display: flex;
       align-items: center;
@@ -44,11 +49,19 @@
       border-radius: 4px;
       font-size: 13px;
     }
+    #toggleSidebarBtn {
+      background: #333;
+      color: #fff;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 16px;
+    }
 
     .app {
       flex: 1;
       display: flex;
       min-height: 0;
+      position: relative;
     }
 
     /* 左側 drawer */
@@ -58,6 +71,11 @@
       background: #181a1f;
       display: flex;
       flex-direction: column;
+      transition: transform 0.2s ease;
+      z-index: 10;
+    }
+    .sidebar.hidden {
+      transform: translateX(-100%);
     }
     .sidebar-header {
       padding: 8px;
@@ -127,15 +145,16 @@
     }
 
     @media (max-width: 768px) {
+      .sidebar {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+      }
       .app {
         flex-direction: column;
       }
-      .sidebar {
-        width: 100%;
-        height: 120px;
-        flex-direction: column;
-      }
       .main {
+        flex: 1;
         flex-direction: column;
       }
       textarea, #preview {
@@ -174,7 +193,10 @@
 </head>
 <body>
   <header>
-    <h1>Markdown Notes</h1>
+    <div class="left">
+      <button id="toggleSidebarBtn">☰</button>
+      <h1>Markdown Notes</h1>
+    </div>
     <div class="right">
       <button id="clearBtn">Clear</button>
       <button id="downloadBtn">Download</button>
@@ -184,218 +206,4 @@
 
   <div class="app">
     <!-- 左側 notes drawer -->
-    <aside class="sidebar">
-      <div class="sidebar-header">
-        <span>Notes</span>
-        <button id="newNoteBtn">+ New</button>
-      </div>
-      <div id="notesList" class="notes-list"></div>
-    </aside>
-
-    <!-- 右側 editor + preview -->
-    <div class="main">
-      <textarea id="editor" placeholder="# Type your markdown here..."></textarea>
-      <div id="preview"></div>
-    </div>
-  </div>
-
-  <script>
-    // 簡單的 localStorage notes 結構：
-    // key: 'md-notes'
-    // value: JSON.stringify([{id, title, content, updatedAt}, ...])
-
-    const NOTES_KEY = 'md-notes';
-    const editor = document.getElementById('editor');
-    const preview = document.getElementById('preview');
-    const statusEl = document.getElementById('status');
-    const clearBtn = document.getElementById('clearBtn');
-    const downloadBtn = document.getElementById('downloadBtn');
-    const newNoteBtn = document.getElementById('newNoteBtn');
-    const notesListEl = document.getElementById('notesList');
-
-    let notes = [];
-    let activeId = null;
-    let saveTimer = null;
-
-    function loadNotes() {
-      const raw = localStorage.getItem(NOTES_KEY);
-      if (!raw) {
-        // 初始化一個預設 note
-        const first = {
-          id: 'note-' + Date.now(),
-          title: 'First note',
-          content: '# Markdown Notes\n\n- 離線可用\n- 多筆 note\n- 本地 localStorage 存檔',
-          updatedAt: Date.now()
-        };
-        notes = [first];
-        activeId = first.id;
-        saveNotes();
-      } else {
-        try {
-          notes = JSON.parse(raw);
-          if (!Array.isArray(notes)) notes = [];
-        } catch (e) {
-          notes = [];
-        }
-        if (notes.length === 0) {
-          const first = {
-            id: 'note-' + Date.now(),
-            title: 'First note',
-            content: '# Markdown Notes\n\n新建你的第一個 note',
-            updatedAt: Date.now()
-          };
-          notes = [first];
-          activeId = first.id;
-          saveNotes();
-        } else {
-          activeId = notes[0].id;
-        }
-      }
-    }
-
-    function saveNotes() {
-      localStorage.setItem(NOTES_KEY, JSON.stringify(notes));
-    }
-
-    function renderNotesList() {
-      notesListEl.innerHTML = '';
-      notes
-        .slice()
-        .sort((a, b) => b.updatedAt - a.updatedAt)
-        .forEach(note => {
-          const item = document.createElement('div');
-          item.className = 'note-item' + (note.id === activeId ? ' active' : '');
-          item.dataset.id = note.id;
-
-          const titleSpan = document.createElement('span');
-          titleSpan.className = 'note-title';
-          titleSpan.textContent = note.title || '(untitled)';
-
-          const delBtn = document.createElement('button');
-          delBtn.className = 'note-delete';
-          delBtn.textContent = '×';
-          delBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            deleteNote(note.id);
-          });
-
-          item.appendChild(titleSpan);
-          item.appendChild(delBtn);
-
-          item.addEventListener('click', () => {
-            setActiveNote(note.id);
-          });
-
-          notesListEl.appendChild(item);
-        });
-    }
-
-    function setActiveNote(id) {
-      const note = notes.find(n => n.id === id);
-      if (!note) return;
-      activeId = id;
-      editor.value = note.content;
-      preview.innerHTML = marked.parse(note.content);
-      renderNotesList();
-      statusEl.textContent = 'Loaded';
-    }
-
-    function autoUpdateActiveNote() {
-      const note = notes.find(n => n.id === activeId);
-      if (!note) return;
-      const value = editor.value;
-      note.content = value;
-      // 取第一行當標題
-      const firstLine = value.split('\n')[0].replace(/^#\s*/, '').trim();
-      note.title = firstLine || note.title || 'Untitled';
-      note.updatedAt = Date.now();
-      preview.innerHTML = marked.parse(value);
-      statusEl.textContent = 'Saving...';
-      if (saveTimer) clearTimeout(saveTimer);
-      saveTimer = setTimeout(() => {
-        saveNotes();
-        renderNotesList();
-        statusEl.textContent = 'Saved';
-      }, 400);
-    }
-
-    function newNote() {
-      const title = prompt('Note title?') || 'Untitled';
-      const note = {
-        id: 'note-' + Date.now(),
-        title,
-        content: '# ' + title + '\n\n',
-        updatedAt: Date.now()
-      };
-      notes.push(note);
-      activeId = note.id;
-      saveNotes();
-      renderNotesList();
-      setActiveNote(note.id);
-    }
-
-    function deleteNote(id) {
-      if (!confirm('Delete this note?')) return;
-      const idx = notes.findIndex(n => n.id === id);
-      if (idx === -1) return;
-      notes.splice(idx, 1);
-      if (notes.length === 0) {
-        const first = {
-          id: 'note-' + Date.now(),
-          title: 'First note',
-          content: '# Markdown Notes\n\n新建你的第一個 note',
-          updatedAt: Date.now()
-        };
-        notes = [first];
-        activeId = first.id;
-      } else {
-        activeId = notes[0].id;
-      }
-      saveNotes();
-      renderNotesList();
-      setActiveNote(activeId);
-    }
-
-    // 初始化
-    loadNotes();
-    renderNotesList();
-    setActiveNote(activeId);
-
-    editor.addEventListener('input', autoUpdateActiveNote);
-
-    // Clear 目前 note 內容
-    clearBtn.addEventListener('click', () => {
-      if (!confirm('Clear current note content?')) return;
-      editor.value = '';
-      autoUpdateActiveNote();
-      statusEl.textContent = 'Cleared';
-    });
-
-    // Download 目前 note
-    downloadBtn.addEventListener('click', () => {
-      const note = notes.find(n => n.id === activeId);
-      const filename = (note?.title || 'note').replace(/[\\\/:*?"<>|]/g, '_') + '.md';
-      const blob = new Blob([editor.value], { type: 'text/markdown' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-    });
-
-    // 新 note
-    newNoteBtn.addEventListener('click', newNote);
-
-    // Register service worker for offline
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./service-worker.js')
-          .catch(err => console.log('SW registration failed', err));
-      });
-    }
-  </script>
-</body>
-</html>
+    <a
