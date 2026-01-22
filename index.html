@@ -31,6 +31,11 @@
       margin: 0;
       font-size: 16px;
     }
+    header .right {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
     header button {
       background: #61dafb;
       border: none;
@@ -101,8 +106,9 @@
 <body>
   <header>
     <h1>Markdown Viewer</h1>
-    <div>
+    <div class="right">
       <button id="clearBtn">Clear</button>
+      <button id="downloadBtn">Download</button>
       <span id="status">Saved</span>
     </div>
   </header>
@@ -116,11 +122,31 @@
     const editor = document.getElementById('editor');
     const preview = document.getElementById('preview');
     const statusEl = document.getElementById('status');
+    const clearBtn = document.getElementById('clearBtn');
+    const downloadBtn = document.getElementById('downloadBtn');
 
     // Load saved content
-    const saved = l
+    const saved = localStorage.getItem(STORAGE_KEY);
+    const initial = saved || '# Markdown Viewer\n\n- 離線可用\n- 本地 localStorage 存檔\n- 不會同步上雲端';
+    editor.value = initial;
+    preview.innerHTML = marked.parse(initial);
 
-    const clearBtn = document.getElementById('clearBtn');
+    let saveTimer = null;
+
+    function updatePreviewAndSave() {
+      const value = editor.value;
+      preview.innerHTML = marked.parse(value);
+      statusEl.textContent = 'Saving...';
+      if (saveTimer) clearTimeout(saveTimer);
+      saveTimer = setTimeout(() => {
+        localStorage.setItem(STORAGE_KEY, value);
+        statusEl.textContent = 'Saved';
+      }, 400);
+    }
+
+    editor.addEventListener('input', updatePreviewAndSave);
+
+    // Clear button
     clearBtn.addEventListener('click', () => {
       if (!confirm('Clear all content?')) return;
       editor.value = '';
@@ -128,4 +154,27 @@
       localStorage.removeItem(STORAGE_KEY);
       statusEl.textContent = 'Cleared';
     });
+
+    // Download button
+    downloadBtn.addEventListener('click', () => {
+      const blob = new Blob([editor.value], { type: 'text/markdown' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'note.md';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    });
+
+    // Register service worker for offline
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./service-worker.js')
+          .catch(err => console.log('SW registration failed', err));
+      });
+    }
   </script>
+</body>
+</html>
