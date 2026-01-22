@@ -200,6 +200,7 @@
     </div>
     <div class="right">
       <button id="addBtn">Add</button>
+      <button id="shareBtn">Share</button>
       <button id="clearBtn">Clear</button>
       <button id="downloadBtn">Download</button>
       <span id="status">Saved</span>
@@ -230,6 +231,7 @@
     const downloadBtn = document.getElementById('downloadBtn');
     const newNoteBtn = document.getElementById('newNoteBtn');
     const addBtn = document.getElementById('addBtn');
+    const shareBtn = document.getElementById('shareBtn');
     const notesListEl = document.getElementById('notesList');
     const toggleSidebarBtn = document.getElementById('toggleSidebarBtn');
     const sidebarEl = document.querySelector('.sidebar');
@@ -425,6 +427,25 @@
 
     newNoteBtn.addEventListener('click', newNote);
     addBtn.addEventListener('click', newNote);
+
+    // Share current note via Web Share API
+    shareBtn.addEventListener('click', async () => {
+      const note = notes.find(n => n.id === activeId);
+      const title = note?.title || 'Markdown Note';
+      const text = editor.value || '';
+
+      if (!navigator.share) {
+        alert('Sharing is not supported in this browser.');
+        return;
+      }
+
+      try {
+        await navigator.share({ title, text });
+        statusEl.textContent = 'Shared';
+      } catch (err) {
+        console.log('Share cancelled or failed', err);
+      }
+    });  // [web:75][web:77][web:84]
 
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
