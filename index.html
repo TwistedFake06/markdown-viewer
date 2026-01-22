@@ -101,7 +101,10 @@
 <body>
   <header>
     <h1>Markdown Viewer</h1>
-    <div id="status">Saved</div>
+    <div>
+      <button id="clearBtn">Clear</button>
+      <span id="status">Saved</span>
+    </div>
   </header>
   <div class="container">
     <textarea id="editor" placeholder="# Type your markdown here..."></textarea>
@@ -116,3 +119,13 @@
 
     // Load saved content
     const saved = l
+
+    const clearBtn = document.getElementById('clearBtn');
+    clearBtn.addEventListener('click', () => {
+      if (!confirm('Clear all content?')) return;
+      editor.value = '';
+      preview.innerHTML = '';
+      localStorage.removeItem(STORAGE_KEY);
+      statusEl.textContent = 'Cleared';
+    });
+
