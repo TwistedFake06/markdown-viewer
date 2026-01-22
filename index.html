@@ -79,4 +79,359 @@
       pointer-events: none;
     }
     .sidebar-header {
-      pad
+      padding: 8px;
+      border-bottom: 1px solid #333;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+    }
+    .sidebar-header button {
+      padding: 2px 8px;
+      font-size: 12px;
+    }
+    .notes-list {
+      flex: 1;
+      overflow-y: auto;
+    }
+    .note-item {
+      padding: 6px 10px;
+      cursor: pointer;
+      border-bottom: 1px solid #222;
+      font-size: 13px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .note-item.active {
+      background: #2a2f3a;
+    }
+    .note-title {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 150px;
+    }
+    .note-delete {
+      background: transparent;
+      border: none;
+      color: #888;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    /* 右側 editor + preview */
+    .main {
+      flex: 1;
+      display: flex;
+      min-width: 0;
+    }
+    textarea {
+      width: 50%;
+      padding: 8px;
+      border: none;
+      border-right: 1px solid #333;
+      outline: none;
+      font-family: Menlo, SFMono-Regular, monospace;
+      font-size: 13px;
+      background: #1b1f23;
+      color: #e5e5e5;
+      resize: none;
+    }
+    #preview {
+      width: 50%;
+      padding: 8px 12px;
+      overflow-y: auto;
+      background: #181a1f;
+    }
+
+    @media (max-width: 768px) {
+      .sidebar {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+      }
+      .app {
+        flex-direction: column;
+      }
+      .main {
+        flex: 1;
+        flex-direction: column;
+      }
+      textarea, #preview {
+        width: 100%;
+        height: 50%;
+      }
+      textarea {
+        border-right: none;
+        border-bottom: 1px solid #333;
+      }
+    }
+
+    #preview h1, #preview h2, #preview h3 {
+      border-bottom: 1px solid #333;
+      padding-bottom: 4px;
+    }
+    #preview code {
+      background: #2d333b;
+      padding: 2px 4px;
+      border-radius: 3px;
+      font-size: 13px;
+    }
+    #preview pre code {
+      display: block;
+      padding: 8px;
+      overflow-x: auto;
+    }
+    #status {
+      font-size: 11px;
+      opacity: 0.7;
+    }
+  </style>
+
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+  <header>
+    <div class="left">
+      <button id="toggleSidebarBtn">☰</button>
+      <h1>Markdown Notes</h1>
+    </div>
+    <div class="right">
+      <button id="addBtn">Add</button>
+      <button id="clearBtn">Clear</button>
+      <button id="downloadBtn">Download</button>
+      <span id="status">Saved</span>
+    </div>
+  </header>
+
+  <div class="app">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <span>Notes</span>
+        <button id="newNoteBtn">+ New</button>
+      </div>
+      <div id="notesList" class="notes-list"></div>
+    </aside>
+
+    <div class="main">
+      <textarea id="editor" placeholder="# Type your markdown here..."></textarea>
+      <div id="preview"></div>
+    </div>
+  </div>
+
+  <script>
+    const NOTES_KEY = 'md-notes';
+    const editor = document.getElementById('editor');
+    const preview = document.getElementById('preview');
+    const statusEl = document.getElementById('status');
+    const clearBtn = document.getElementById('clearBtn');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const newNoteBtn = document.getElementById('newNoteBtn');
+    const addBtn = document.getElementById('addBtn');
+    const notesListEl = document.getElementById('notesList');
+    const toggleSidebarBtn = document.getElementById('toggleSidebarBtn');
+    const sidebarEl = document.querySelector('.sidebar');
+
+    let notes = [];
+    let activeId = null;
+    let saveTimer = null;
+    let sidebarHidden = false;
+
+    function createEmptyNote() {
+      return {
+        id: 'note-' + Date.now(),
+        title: 'New note',
+        content: '',
+        updatedAt: Date.now()
+      };
+    }
+
+    function loadNotes() {
+      const raw = localStorage.getItem(NOTES_KEY);
+      if (!raw) {
+        const first = createEmptyNote();
+        notes = [first];
+        activeId = first.id;
+        saveNotes();
+      } else {
+        try {
+          notes = JSON.parse(raw);
+          if (!Array.isArray(notes)) notes = [];
+        } catch (e) {
+          notes = [];
+        }
+        if (notes.length === 0) {
+          const first = createEmptyNote();
+          notes = [first];
+          activeId = first.id;
+          saveNotes();
+        } else {
+          activeId = notes[0].id;
+        }
+      }
+    }
+
+    function saveNotes() {
+      localStorage.setItem(NOTES_KEY, JSON.stringify(notes));
+    }
+
+    function renderNotesList() {
+      notesListEl.innerHTML = '';
+      notes
+        .slice()
+        .sort((a, b) => b.updatedAt - a.updatedAt)
+        .forEach(note => {
+          const item = document.createElement('div');
+          item.className = 'note-item' + (note.id === activeId ? ' active' : '');
+          item.dataset.id = note.id;
+
+          const titleSpan = document.createElement('span');
+          titleSpan.className = 'note-title';
+          titleSpan.textContent = note.title || '(untitled)';
+
+          const delBtn = document.createElement('button');
+          delBtn.className = 'note-delete';
+          delBtn.textContent = '×';
+          delBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            deleteNote(note.id);
+          });
+
+          item.appendChild(titleSpan);
+          item.appendChild(delBtn);
+
+          item.addEventListener('click', () => {
+            setActiveNote(note.id);
+            if (window.innerWidth <= 768) {
+              sidebarHidden = true;
+              sidebarEl.classList.add('hidden');
+            }
+          });
+
+          notesListEl.appendChild(item);
+        });
+    }
+
+    function setActiveNote(id) {
+      const note = notes.find(n => n.id === id);
+      if (!note) return;
+      activeId = id;
+      editor.value = note.content || '';
+      preview.innerHTML = marked.parse(note.content || '');
+      renderNotesList();
+      statusEl.textContent = 'Loaded';
+    }
+
+    function autoUpdateActiveNote() {
+      const note = notes.find(n => n.id === activeId);
+      if (!note) return;
+      const value = editor.value;
+      note.content = value;
+      const firstLine = value.split('\n')[0].replace(/^#\s*/, '').trim();
+      note.title = firstLine || note.title || 'Untitled';
+      note.updatedAt = Date.now();
+      preview.innerHTML = marked.parse(value);
+      statusEl.textContent = 'Saving...';
+      if (saveTimer) clearTimeout(saveTimer);
+      saveTimer = setTimeout(() => {
+        saveNotes();
+        renderNotesList();
+        statusEl.textContent = 'Saved';
+      }, 400);
+    }
+
+    function newNote() {
+      const title = prompt('Note title?') || 'Untitled';
+      const note = {
+        id: 'note-' + Date.now(),
+        title,
+        content: '# ' + title + '\n\n',
+        updatedAt: Date.now()
+      };
+      notes.push(note);
+      activeId = note.id;
+      saveNotes();
+      renderNotesList();
+      setActiveNote(note.id);
+    }
+
+    function deleteNote(id) {
+      if (!confirm('Delete this note?')) return;
+      const idx = notes.findIndex(n => n.id === id);
+      if (idx === -1) return;
+      notes.splice(idx, 1);
+      if (notes.length === 0) {
+        const first = createEmptyNote();
+        notes = [first];
+        activeId = first.id;
+      } else {
+        activeId = notes[0].id;
+      }
+      saveNotes();
+      renderNotesList();
+      setActiveNote(activeId);
+    }
+
+    function initSidebarVisibility() {
+      if (window.innerWidth <= 768) {
+        sidebarHidden = true;
+        sidebarEl.classList.add('hidden');
+      } else {
+        sidebarHidden = false;
+        sidebarEl.classList.remove('hidden');
+      }
+    }
+
+    // 初始化
+    loadNotes();
+    renderNotesList();
+    setActiveNote(activeId);
+    initSidebarVisibility();
+
+    window.addEventListener('resize', initSidebarVisibility);
+    editor.addEventListener('input', autoUpdateActiveNote);
+
+    toggleSidebarBtn.addEventListener('click', () => {
+      sidebarHidden = !sidebarHidden;
+      if (sidebarHidden) {
+        sidebarEl.classList.add('hidden');
+      } else {
+        sidebarEl.classList.remove('hidden');
+      }
+    });
+
+    clearBtn.addEventListener('click', () => {
+      if (!confirm('Clear current note content?')) return;
+      editor.value = '';
+      autoUpdateActiveNote();
+      statusEl.textContent = 'Cleared';
+    });
+
+    downloadBtn.addEventListener('click', () => {
+      const note = notes.find(n => n.id === activeId);
+      const filename = (note?.title || 'note').replace(/[\\\/:*?"<>|]/g, '_') + '.md';
+      const blob = new Blob([editor.value], { type: 'text/markdown' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    });
+
+    newNoteBtn.addEventListener('click', newNote);
+    addBtn.addEventListener('click', newNote);
+
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./service-worker.js')
+          .catch(err => console.log('SW registration failed', err));
+      });
+    }
+  </script>
+</body>
+</html>
