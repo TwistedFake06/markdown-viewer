@@ -57,18 +57,27 @@
     header button {
       border: none;
       border-radius: 9px;
-      padding: 6px 10px;
+      padding: 6px 8px;
       font-size: 13px;
       font-weight: 500;
       color: #0b0c10;
       background: linear-gradient(135deg, #4dd0ff, #21c1ef);
       box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
-      min-width: 68px;
+      min-width: 36px;
       text-align: center;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
     }
     header button:active {
       transform: translateY(1px);
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+    }
+    header button .icon {
+      width: 16px;
+      height: 16px;
+      fill: #0b0c10;
+      display: block;
     }
     #toggleSidebarBtn {
       background: rgba(255, 255, 255, 0.08);
@@ -77,6 +86,9 @@
       border-radius: 9px;
       box-shadow: none;
       min-width: auto;
+    }
+    #toggleSidebarBtn .icon {
+      fill: #f5f5f7;
     }
     #status {
       font-size: 11px;
@@ -291,19 +303,70 @@
 <body>
   <header>
     <div class="left">
-      <button id="toggleSidebarBtn">☰</button>
+      <button id="toggleSidebarBtn" title="Notes">
+        <svg viewBox="0 0 24 24" class="icon">
+          <path d="M4 6h16v2H4V6zm0 5h16v2H4v-2zm0 5h16v2H4v-2z"></path>
+        </svg>
+      </button>
       <h1>Markdown Notes</h1>
     </div>
     <div class="right">
       <div class="toolbar">
-        <button id="editModeBtn">Edit</button>
-        <button id="previewBtn">Preview</button>
-        <button id="addBtn">Add</button>
-        <button id="copyBtn">Copy</button>
-        <button id="clearBtn">Clear</button>
-        <button id="shareBtn">Share</button>
-        <button id="loadBtn">Load</button>
-        <button id="downloadBtn">Download</button>
+        <!-- Edit -->
+        <button id="editModeBtn" title="Edit / Done">
+          <svg viewBox="0 0 24 24" class="icon">
+            <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"></path>
+          </svg>
+        </button>
+
+        <!-- Preview -->
+        <button id="previewBtn" title="Preview">
+          <svg viewBox="0 0 24 24" class="icon">
+            <path d="M12 5c-7 0-10 7-10 7s3 7 10 7 10-7 10-7-3-7-10-7zm0 11a4 4 0 1 1 0-8 4 4 0 0 1 0 8z"></path>
+          </svg>
+        </button>
+
+        <!-- Add -->
+        <button id="addBtn" title="Add note">
+          <svg viewBox="0 0 24 24" class="icon">
+            <path d="M11 11V5h2v6h6v2h-6v6h-2v-6H5v-2z"></path>
+          </svg>
+        </button>
+
+        <!-- Share -->
+        <button id="shareBtn" title="Share">
+          <svg viewBox="0 0 24 24" class="icon">
+            <path d="M18 16a2 2 0 0 0-1.65.85L9.91 13.7a2 2 0 0 0 0-3.4l6.44-3.15A2 2 0 1 0 15 5a2 2 0 0 0 .09.6L8.65 8.75a2 2 0 1 0 0 6.5l6.44 3.15A2 2 0 1 0 18 16z"></path>
+          </svg>
+        </button>
+
+        <!-- Load -->
+        <button id="loadBtn" title="Load from file">
+          <svg viewBox="0 0 24 24" class="icon">
+            <path d="M5 20h14v-2H5v2zm7-16-5 5h3v4h4v-4h3l-5-5z"></path>
+          </svg>
+        </button>
+
+        <!-- Copy -->
+        <button id="copyBtn" title="Copy">
+          <svg viewBox="0 0 24 24" class="icon">
+            <path d="M16 1H4a2 2 0 0 0-2 2v12h2V3h12V1zm3 4H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2zm0 16H8V7h11v14z"></path>
+          </svg>
+        </button>
+
+        <!-- Clear -->
+        <button id="clearBtn" title="Clear">
+          <svg viewBox="0 0 24 24" class="icon">
+            <path d="M6 7h12l-1 13H7L6 7zm3-4h6l1 2H8l1-2z"></path>
+          </svg>
+        </button>
+
+        <!-- Download -->
+        <button id="downloadBtn" title="Download">
+          <svg viewBox="0 0 24 24" class="icon">
+            <path d="M5 20h14v-2H5v2zm7-16v9.17l3.59-3.58L17 11l-5 5-5-5 1.41-1.41L11 13.17V4h1z"></path>
+          </svg>
+        </button>
       </div>
       <span id="status">Saved</span>
     </div>
@@ -367,6 +430,9 @@
     let activeId = null;
     let saveTimer = null;
     let sidebarHidden = false;
+
+    // Edit 模式：預設只讀，按 Edit 進入可編輯
+    let isEditMode = false;
 
     function createEmptyNote() {
       return {
@@ -567,105 +633,7 @@
       } catch (err) {
         console.log('Share cancelled or failed', err);
       }
-    }); // [web:75][web:77][web:84]
+    });
 
     // Load markdown from iOS Files / local file
-    loadBtn.addEventListener('click', () => {
-      fileInput.value = '';
-      fileInput.click();
-    });
-
-    // Copy 目前 note 內容到剪貼簿
-    copyBtn.addEventListener('click', async () => {
-      const text = editor.value || '';
     
-      // 優先用新版 Clipboard API
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        try {
-          await navigator.clipboard.writeText(text);
-          statusEl.textContent = 'Copied';
-        } catch (err) {
-          console.log('Clipboard write failed, fallback used', err);
-          fallbackCopy(text);
-        }
-      } else {
-        fallbackCopy(text);
-      }
-    });
-    
-    function fallbackCopy(text) {
-      // 後備：選取 textarea 內容再 execCommand
-      const originalReadOnly = editor.readOnly;
-      editor.readOnly = false;
-      editor.select();
-      try {
-        const ok = document.execCommand('copy');
-        statusEl.textContent = ok ? 'Copied' : 'Copy failed';
-      } catch (err) {
-        alert('Copy is not supported in this browser.');
-      }
-      // 還原 selection 和 readOnly 狀態
-      editor.setSelectionRange(editor.value.length, editor.value.length);
-      editor.readOnly = !isEditMode;
-    }
-
-
-    fileInput.addEventListener('change', () => {
-      const file = fileInput.files && fileInput.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = () => {
-        const content = reader.result || '';
-        editor.value = content;
-        autoUpdateActiveNote();
-        statusEl.textContent = 'Loaded file: ' + (file.name || '');
-      };
-      reader.onerror = () => {
-        alert('Failed to read file');
-      };
-      reader.readAsText(file);
-    }); // [web:88][web:92][web:98]
-
-    // Edit 模式切換（可編輯 / 只讀）
-    // 初始：只讀模式，按「Edit」才進入可編輯
-    let isEditMode = false;
-    editor.readOnly = true;
-    editModeBtn.textContent = 'Edit';
-    
-    editModeBtn.addEventListener('click', () => {
-      isEditMode = !isEditMode;
-      editor.readOnly = !isEditMode;
-      editModeBtn.textContent = isEditMode ? 'Done' : 'Edit';
-      if (isEditMode) {
-        editor.focus();
-        const len = editor.value.length;
-        editor.setSelectionRange(len, len);
-      }
-    });
-
-    // Preview 彈出視窗
-    previewBtn.addEventListener('click', () => {
-      const md = editor.value || '';
-      previewContent.innerHTML = marked.parse(md);
-      previewOverlay.style.display = 'flex';
-    });
-
-    closePreviewBtn.addEventListener('click', () => {
-      previewOverlay.style.display = 'none';
-    });
-
-    previewOverlay.addEventListener('click', (e) => {
-      if (e.target === previewOverlay) {
-        previewOverlay.style.display = 'none';
-      }
-    });
-
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./service-worker.js')
-          .catch(err => console.log('SW registration failed', err));
-      });
-    }
-  </script>
-</body>
-</html>
