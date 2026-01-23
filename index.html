@@ -299,9 +299,10 @@
         <button id="editModeBtn">Edit</button>
         <button id="previewBtn">Preview</button>
         <button id="addBtn">Add</button>
+        <button id="copyBtn">Copy</button>
+        <button id="clearBtn">Clear</button>
         <button id="shareBtn">Share</button>
         <button id="loadBtn">Load</button>
-        <button id="clearBtn">Clear</button>
         <button id="downloadBtn">Download</button>
       </div>
       <span id="status">Saved</span>
@@ -351,6 +352,7 @@
     const addBtn = document.getElementById('addBtn');
     const shareBtn = document.getElementById('shareBtn');
     const loadBtn = document.getElementById('loadBtn');
+    const copyBtn = document.getElementById('copyBtn');
     const editModeBtn = document.getElementById('editModeBtn');
     const previewBtn = document.getElementById('previewBtn');
     const fileInput = document.getElementById('fileInput');
@@ -572,6 +574,41 @@
       fileInput.value = '';
       fileInput.click();
     });
+
+    // Copy 目前 note 內容到剪貼簿
+    copyBtn.addEventListener('click', async () => {
+      const text = editor.value || '';
+    
+      // 優先用新版 Clipboard API
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        try {
+          await navigator.clipboard.writeText(text);
+          statusEl.textContent = 'Copied';
+        } catch (err) {
+          console.log('Clipboard write failed, fallback used', err);
+          fallbackCopy(text);
+        }
+      } else {
+        fallbackCopy(text);
+      }
+    });
+    
+    function fallbackCopy(text) {
+      // 後備：選取 textarea 內容再 execCommand
+      const originalReadOnly = editor.readOnly;
+      editor.readOnly = false;
+      editor.select();
+      try {
+        const ok = document.execCommand('copy');
+        statusEl.textContent = ok ? 'Copied' : 'Copy failed';
+      } catch (err) {
+        alert('Copy is not supported in this browser.');
+      }
+      // 還原 selection 和 readOnly 狀態
+      editor.setSelectionRange(editor.value.length, editor.value.length);
+      editor.readOnly = !isEditMode;
+    }
+
 
     fileInput.addEventListener('change', () => {
       const file = fileInput.files && fileInput.files[0];
