@@ -1,6 +1,6 @@
 # Markdown Notes (iOS-friendly PWA)
 
-A lightweight, offline-first Markdown note app designed to work well on iOS Safari and as a “Add to Home Screen” web app.
+A lightweight, offline-first Markdown note app designed to work well on iOS Safari and as an “Add to Home Screen” web app.
 
 ## Features
 
@@ -23,10 +23,10 @@ A lightweight, offline-first Markdown note app designed to work well on iOS Safa
   - Monospace font for code-like editing experience.
 
 - **Edit mode toggle**
-  - `Done` / `Edit` button:
-    - **Done**: editor is editable (`readOnly = false`).
-    - **Edit**: editor becomes read-only for viewing only.
-  - Helpful to prevent accidental edits while reading.
+  - `Edit` / `Done` button:
+    - **Edit**: switch to editable mode (`readOnly = false`).
+    - **Done**: switch back to read-only view mode.
+  - Starts in read-only mode by default to prevent accidental edits.
 
 - **Preview popup**
   - `Preview` button opens a modal overlay.
@@ -41,6 +41,10 @@ A lightweight, offline-first Markdown note app designed to work well on iOS Safa
 - **Export / Download Markdown**
   - `Download` button downloads the current note as a `.md` file.
   - Filename is based on the note title (sanitized).
+
+- **Copy current note**
+  - `Copy` button copies the current note’s Markdown into the clipboard.
+  - Uses the Clipboard API when available, with a fallback for older browsers.
 
 - **Share via system share sheet**
   - `Share` button uses the Web Share API (where supported).
@@ -80,8 +84,10 @@ A lightweight, offline-first Markdown note app designed to work well on iOS Safa
    - `Edit` / `Done` to toggle edit mode.
    - `Preview` to view rendered Markdown.
    - `Load` to import `.md` files from Files.
+   - `Copy` to copy the current note to the clipboard.
    - `Download` to export notes as `.md`.
    - `Share` to send Markdown to other apps.
+   - `Clear` to reset the current note.
 
 ## Tech stack
 
@@ -89,4 +95,5 @@ A lightweight, offline-first Markdown note app designed to work well on iOS Safa
 - `localStorage` for persistence.
 - [`marked`](https://marked.js.org/) for Markdown parsing.
 - Web Share API for sharing (where supported by the browser).
+- Clipboard API (with fallback) for copying.
 - Service worker + web manifest for offline/PWA behavior.
