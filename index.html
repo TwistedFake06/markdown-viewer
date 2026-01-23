@@ -368,7 +368,7 @@
           </svg>
         </button>
       </div>
-      <span id="status">Saved</span>
+      <span id="status">Read only</span>
     </div>
   </header>
 
@@ -430,9 +430,7 @@
     let activeId = null;
     let saveTimer = null;
     let sidebarHidden = false;
-
-    // Edit 模式：預設只讀，按 Edit 進入可編輯
-    let isEditMode = false;
+    let isEditMode = false; // 初始只讀
 
     function createEmptyNote() {
       return {
@@ -515,7 +513,7 @@
       activeId = id;
       editor.value = note.content || '';
       renderNotesList();
-      statusEl.textContent = 'Loaded';
+      statusEl.textContent = isEditMode ? 'Editing' : 'Read only';
     }
 
     function autoUpdateActiveNote() {
@@ -531,7 +529,7 @@
       saveTimer = setTimeout(() => {
         saveNotes();
         renderNotesList();
-        statusEl.textContent = 'Saved';
+        statusEl.textContent = isEditMode ? 'Editing' : 'Read only';
       }, 400);
     }
 
@@ -596,7 +594,7 @@
       if (!confirm('Clear current note content?')) return;
       editor.value = '';
       autoUpdateActiveNote();
-      statusEl.textContent = 'Cleared';
+      statusEl.textContent = isEditMode ? 'Editing' : 'Read only';
     });
 
     downloadBtn.addEventListener('click', () => {
@@ -636,4 +634,93 @@
     });
 
     // Load markdown from iOS Files / local file
-    
+    loadBtn.addEventListener('click', () => {
+      fileInput.value = '';
+      fileInput.click();
+    });
+
+    fileInput.addEventListener('change', () => {
+      const file = fileInput.files && fileInput.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        const content = reader.result || '';
+        editor.value = content;
+        autoUpdateActiveNote();
+        statusEl.textContent = 'Loaded file: ' + (file.name || '');
+      };
+      reader.onerror = () => {
+        alert('Failed to read file');
+      };
+      reader.readAsText(file);
+    });
+
+    // Copy current note to clipboard
+    copyBtn.addEventListener('click', async () => {
+      const text = editor.value || '';
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        try {
+          await navigator.clipboard.writeText(text);
+          statusEl.textContent = 'Copied';
+        } catch (err) {
+          console.log('Clipboard write failed, fallback used', err);
+          fallbackCopy(text);
+        }
+      } else {
+        fallbackCopy(text);
+      }
+    });
+
+    function fallbackCopy(text) {
+      const originalReadOnly = editor.readOnly;
+      editor.readOnly = false;
+      editor.select();
+      try {
+        const ok = document.execCommand('copy');
+        statusEl.textContent = ok ? 'Copied' : 'Copy failed';
+      } catch (err) {
+        alert('Copy is not supported in this browser.');
+      }
+      editor.setSelectionRange(editor.value.length, editor.value.length);
+      editor.readOnly = !isEditMode && originalReadOnly;
+    }
+
+    // Edit 模式切換（可編輯 / 只讀）
+    editor.readOnly = true;
+    editModeBtn.addEventListener('click', () => {
+      isEditMode = !isEditMode;
+      editor.readOnly = !isEditMode;
+      statusEl.textContent = isEditMode ? 'Editing' : 'Read only';
+      if (isEditMode) {
+        editor.focus();
+        const len = editor.value.length;
+        editor.setSelectionRange(len, len);
+      }
+    });
+
+    // Preview 彈出視窗
+    previewBtn.addEventListener('click', () => {
+      const md = editor.value || '';
+      previewContent.innerHTML = marked.parse(md);
+      previewOverlay.style.display = 'flex';
+    });
+
+    closePreviewBtn.addEventListener('click', () => {
+      previewOverlay.style.display = 'none';
+    });
+
+    previewOverlay.addEventListener('click', (e) => {
+      if (e.target === previewOverlay) {
+        previewOverlay.style.display = 'none';
+      }
+    });
+
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./service-worker.js')
+          .catch(err => console.log('SW registration failed', err));
+      });
+    }
+  </script>
+</body>
+</html>
