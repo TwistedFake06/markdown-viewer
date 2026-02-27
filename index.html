@@ -119,22 +119,28 @@
       min-height: 0;
       position: relative;
       padding: 10px;
-      gap: 10px;
+      gap: 0;
     }
 
     /* 左側 drawer 卡片 */
     .sidebar {
       width: 230px;
+      flex-shrink: 0;
+      margin-right: 10px;
       display: flex;
       flex-direction: column;
       border-radius: 16px;
       background: rgba(15, 15, 22, 0.9);
       border: 1px solid rgba(255, 255, 255, 0.04);
       box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
-      transition: transform 0.2s ease, opacity 0.2s ease;
+      transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                  margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                  opacity 0.3s ease;
       overflow: hidden;
     }
     .sidebar.hidden {
+      width: 0 !important;
+      margin-right: 0 !important;
       transform: translateX(-110%);
       opacity: 0;
       pointer-events: none;
@@ -185,7 +191,7 @@
       font-size: 13px;
     }
 
-    /* 右側 main 卡片：單一 editor */
+    /* 右側 main 卡片 */
     .main {
       flex: 1;
       display: flex;
@@ -206,6 +212,8 @@
       background: transparent;
       color: #e5e5e7;
       resize: none;
+      white-space: pre-wrap;
+      overflow-wrap: break-word;
     }
 
     /* 手機 layout */
@@ -274,6 +282,7 @@
       overflow-y: auto;
       font-size: 14px;
       line-height: 1.5;
+      scrollbar-gutter: stable;
     }
     .preview-content h1,
     .preview-content h2,
@@ -296,6 +305,15 @@
       padding: 8px;
       overflow-x: auto;
     }
+    .preview-content img {
+      max-width: 100%;
+      height: auto;
+      display: block;
+      margin: 12px 0;
+    }
+    .preview-content p {
+      margin: 12px 0;
+    }
   </style>
 
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -312,56 +330,48 @@
     </div>
     <div class="right">
       <div class="toolbar">
-        <!-- Edit -->
         <button id="editModeBtn" title="Edit / Done">
           <svg viewBox="0 0 24 24" class="icon">
             <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"></path>
           </svg>
         </button>
 
-        <!-- Preview -->
         <button id="previewBtn" title="Preview">
           <svg viewBox="0 0 24 24" class="icon">
             <path d="M12 5c-7 0-10 7-10 7s3 7 10 7 10-7 10-7-3-7-10-7zm0 11a4 4 0 1 1 0-8 4 4 0 0 1 0 8z"></path>
           </svg>
         </button>
 
-        <!-- Add -->
         <button id="addBtn" title="Add note">
           <svg viewBox="0 0 24 24" class="icon">
             <path d="M11 11V5h2v6h6v2h-6v6h-2v-6H5v-2z"></path>
           </svg>
         </button>
 
-        <!-- Share -->
         <button id="shareBtn" title="Share">
           <svg viewBox="0 0 24 24" class="icon">
             <path d="M18 16a2 2 0 0 0-1.65.85L9.91 13.7a2 2 0 0 0 0-3.4l6.44-3.15A2 2 0 1 0 15 5a2 2 0 0 0 .09.6L8.65 8.75a2 2 0 1 0 0 6.5l6.44 3.15A2 2 0 1 0 18 16z"></path>
           </svg>
         </button>
 
-        <!-- Load -->
         <button id="loadBtn" title="Load from file">
           <svg viewBox="0 0 24 24" class="icon">
             <path d="M5 20h14v-2H5v2zm7-16-5 5h3v4h4v-4h3l-5-5z"></path>
           </svg>
         </button>
 
-        <!-- Copy -->
         <button id="copyBtn" title="Copy">
           <svg viewBox="0 0 24 24" class="icon">
             <path d="M16 1H4a2 2 0 0 0-2 2v12h2V3h12V1zm3 4H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2zm0 16H8V7h11v14z"></path>
           </svg>
         </button>
 
-        <!-- Clear -->
         <button id="clearBtn" title="Clear">
           <svg viewBox="0 0 24 24" class="icon">
             <path d="M6 7h12l-1 13H7L6 7zm3-4h6l1 2H8l1-2z"></path>
           </svg>
         </button>
 
-        <!-- Download -->
         <button id="downloadBtn" title="Download">
           <svg viewBox="0 0 24 24" class="icon">
             <path d="M5 20h14v-2H5v2zm7-16v9.17l3.59-3.58L17 11l-5 5-5-5 1.41-1.41L11 13.17V4h1z"></path>
@@ -386,7 +396,6 @@
     </div>
   </div>
 
-  <!-- 預覽彈出視窗 -->
   <div id="previewOverlay" class="preview-overlay">
     <div class="preview-panel">
       <div class="preview-header">
@@ -397,13 +406,7 @@
     </div>
   </div>
 
-  <!-- 隱藏的檔案選擇器，用來 Load markdown -->
-  <input
-    type="file"
-    id="fileInput"
-    accept=".md,text/markdown,text/plain"
-    style="display:none"
-  />
+  <input type="file" id="fileInput" accept=".md,text/markdown,text/plain" style="display:none" />
 
   <script>
     const NOTES_KEY = 'md-notes';
@@ -546,6 +549,14 @@
       saveNotes();
       renderNotesList();
       setActiveNote(note.id);
+
+      // ✅ 新增：建立新筆記時自動進入編輯模式
+      isEditMode = true;
+      editor.readOnly = false;
+      statusEl.textContent = 'Editing';
+      editor.focus();
+      const len = editor.value.length;
+      editor.setSelectionRange(len, len);
     }
 
     function deleteNote(id) {
@@ -614,7 +625,6 @@
     newNoteBtn.addEventListener('click', newNote);
     addBtn.addEventListener('click', newNote);
 
-    // Share current note via Web Share API
     shareBtn.addEventListener('click', async () => {
       const note = notes.find(n => n.id === activeId);
       const title = note?.title || 'Markdown Note';
@@ -633,7 +643,6 @@
       }
     });
 
-    // Load markdown from iOS Files / local file
     loadBtn.addEventListener('click', () => {
       fileInput.value = '';
       fileInput.click();
@@ -655,7 +664,6 @@
       reader.readAsText(file);
     });
 
-    // Copy current note to clipboard
     copyBtn.addEventListener('click', async () => {
       const text = editor.value || '';
       if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -685,7 +693,7 @@
       editor.readOnly = !isEditMode && originalReadOnly;
     }
 
-    // Edit 模式切換（可編輯 / 只讀）
+    // Edit 模式切換
     editor.readOnly = true;
     editModeBtn.addEventListener('click', () => {
       isEditMode = !isEditMode;
@@ -698,7 +706,6 @@
       }
     });
 
-    // Preview 彈出視窗
     previewBtn.addEventListener('click', () => {
       const md = editor.value || '';
       previewContent.innerHTML = marked.parse(md);
